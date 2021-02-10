@@ -111,13 +111,16 @@ public class Game {
 	 * @return boolean True if no possible move, False otherwise
 	 */
 	private boolean noPossibleMove(int roll, Player player, Player opponent) {
+		if(roll == 0)
+			return true;
 		//Loop for each of the player's pieces
 		for (int i = 0; i < 7; i++) {
 			int location = player.getLocation(i);
 			//if piece at the start has a legal move or piece on the board has a legal move
-			if(location == Piece.OFF_THE_BOARD && !isIllegalMove(player, roll) || location != Piece.OFF_THE_BOARD && !isIllegalMove(location, roll, player, opponent))
-				//possible move
-				return false;
+			if(location != Piece.SCORED)
+				if(location == Piece.OFF_THE_BOARD && !isIllegalMove(player, roll) || location != Piece.OFF_THE_BOARD && !isIllegalMove(location, roll, player, opponent))
+					//possible move
+					return false;
 		}
 		//no possible move
 		return true;
@@ -156,6 +159,23 @@ public class Game {
 		return false;
 	}
 	
+	public boolean allPiecesAtStart(boolean p1Turn) {
+		//true = player 1 turn, false = player 2 turn
+		if(p1Turn)
+			return allPiecesAtStart(p1);
+		else return allPiecesAtStart(p2);
+	}
+	
+	private boolean allPiecesAtStart(Player p) {
+		//Loop for each players piece
+		for(int i = 0; i < 7; i++) {
+			//Check if that piece is located at start
+			if(p.getLocation(i) != Piece.OFF_THE_BOARD)
+				return false;
+		}
+		return true;
+	}
+	
 	/**
 	 * Checks who's turn it is and calls {@link #newPiece(Player, int)}
 	 * 
@@ -165,7 +185,7 @@ public class Game {
 	 * @param p1Turn The player who's turn it is
 	 * @param roll The player's roll
 	 * @return boolean The return value from {@link #newPiece(Player, int)}
-	 * @throws IllegalMoveException
+	 * @throws IllegalMoveException illegal move exception
 	 */
 	public boolean newPiece(boolean p1Turn, int roll) throws IllegalMoveException {
 		//true = player 1 turn, false = player 2 turn
@@ -232,10 +252,10 @@ public class Game {
 	 * @param roll Player's roll
 	 * @param p1Turn Who's turn it is
 	 * @return boolean True move was made, false otherwise
-	 * @throws NoSuchSpaceException
-	 * @throws IllegalMoveException
+	 * @throws NoSuchSpaceException Illegal square exception
+	 * @throws IllegalMoveException illegal move exception
 	 */
-	public boolean move(char column, int row, int roll, boolean p1Turn) throws NoSuchSpaceException, IllegalMoveException {
+	public boolean move(char column, int row, int roll, boolean p1Turn) throws NoSuchSpaceException, IllegalMoveException, NotYourSquareException {
 		//true player 1 turn, false player 2 turn
 		if(p1Turn)
 			return move(p1, p2, column, row, roll);
@@ -265,15 +285,17 @@ public class Game {
 	 * @throws NoSuchSpaceException
 	 * @throws IllegalMoveException
 	 */
-	private boolean move(Player player, Player opponent, char column, int row, int roll) throws NoSuchSpaceException, IllegalMoveException {
+	private boolean move(Player player, Player opponent, char column, int row, int roll) throws NoSuchSpaceException, IllegalMoveException, NotYourSquareException{
+		if(row == 1 && player.getColor().equals(Color.WHITE) || row == 3 && player.getColor().equals(Color.BLACK))
+			throw new NotYourSquareException(row);
 		//Creates Pair of requested coordinates
-		Pair pair1 = new Pair(column, row);
+		Pair initial = new Pair(column, row);
 		//Checks if the space exists
-		if(!translator.containsKey(pair1))
+		if(!translator.containsKey(initial))
 			throw new NoSuchSpaceException(column, row);
 		
 		//Gets int location of the Pair
-		int location = translator.get(pair1);
+		int location = translator.get(initial);
 		
 		//Checks if the move is legal
 		if(isIllegalMove(location, roll, player, opponent)) {
@@ -296,17 +318,19 @@ public class Game {
 		}
 		
 		//Finds the new location in coordinate form
-		Pair pair2 = reverseSearch(newLocation, player);
-		//Puts the piece on its new location on the board
-		theBoard.update(player, pair2.getFirst(), pair2.getSecond());
+		Pair playerNewLocation = reverseSearch(newLocation, player);
+		Pair opponentPotentialLocation = reverseSearch(newLocation, opponent);
 		
 		//Checks if the opponent has a piece at the new location
-		if(opponent.indexOf(newLocation) != -1)
+		if(opponent.indexOf(newLocation) != -1 && opponentPotentialLocation.getSecond() == 2)
 			//Resets the opponents piece due to being knocked off
 			opponent.reset(opponent.indexOf(newLocation));
 		
+		//Puts the piece on its new location on the board
+		theBoard.update(player, playerNewLocation.getFirst(), playerNewLocation.getSecond());
+		
 		//Checks if the new location is on a Rossette square
-		return Board.isRossette(pair2.getFirst(), pair2.getSecond());
+		return Board.isRossette(playerNewLocation.getFirst(), playerNewLocation.getSecond());
 	}
 
 	/**
@@ -333,16 +357,24 @@ public class Game {
 		//Illegal move: Too many squares to move to score 
 		if(location + roll > Piece.SCORED)
 			return true;
+		if(location + roll == Piece.SCORED)
+			return false;
 		
 		//Illegal move: player's own piece on to move square
 		int playerNewIndex = player.indexOf(location + roll);
 		if(playerNewIndex != -1)
 			return true;
 		
-		//Illegal move: Opponent's piece on middle rossette
+		
 		int opponentNewIndex = opponent.indexOf(location + roll);
+		//Pair playerPair = reverseSearch(location+roll, player);
+		Pair oppPair = reverseSearch(location+roll, opponent);
+		
+		//Illegal move: Opponent's piece on middle rossette
 		//Checks if opponent has a piece on board
 		if(opponentNewIndex == -1)
+			return false;
+		else if(oppPair.getSecond() == 2)
 			return false;
 		int opponentLocation = opponent.getLocation(opponentNewIndex);
 		if(opponentLocation == Piece.ROSSETTE)
@@ -436,6 +468,15 @@ public class Game {
 		return p1.win() || p2.win();			
 	}
 	
+	/**
+	 * Return winners name
+	 * @return String Winner's Name
+	 */
+	public String theWinner() {
+		if(p1.win())
+			return p1.getName();
+		else return p2.getName();
+	}
 	/**
 	 * Returns a String with the scores and board
 	 * 

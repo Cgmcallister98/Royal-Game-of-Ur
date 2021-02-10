@@ -1,1 +1,1 @@
-typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"<Unnamed>","l":"Board"},{"p":"<Unnamed>","l":"Color"},{"p":"<Unnamed>","l":"Dice"},{"p":"<Unnamed>","l":"Game"},{"p":"<Unnamed>","l":"IllegalMoveException"},{"p":"<Unnamed>","l":"Main"},{"p":"<Unnamed>","l":"NoSuchSpaceException"},{"p":"<Unnamed>","l":"Pair"},{"p":"<Unnamed>","l":"Piece"},{"p":"<Unnamed>","l":"Player"},{"p":"<Unnamed>","l":"Roll"},{"p":"<Unnamed>","l":"TooManyPlayersException"}]
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"<Unnamed>","l":"Main"}]

@@ -30,7 +30,7 @@ public class IllegalMoveException extends Exception{
 	/**
 	 * Initializes roll and sets location variables to 0
 	 * 
-	 * @param roll
+	 * @param roll the player's roll
 	 */
 	public IllegalMoveException(int roll) {
 		this.roll = roll;
@@ -49,7 +49,7 @@ public class IllegalMoveException extends Exception{
 	public String getMessage() {
 		//if piece is on the board
 		if(column > 0)
-			return "This is not a legal move: " + column + row + ", You rolled: " + roll + ". Try Again!";
+			return "This is not a legal move: " + column + row + ", You rolled: " + roll + ". Try Again! \n";
 		return "Space is occupied cannot take out new piece. Move another piece.";
 	}
 }

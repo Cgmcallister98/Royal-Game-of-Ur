@@ -1,17 +1,18 @@
 import java.io.*;
 import java.util.Scanner;
-import java.util.Random;
 public class Main {
 	
 	/**
 	 * LEARN HOW TO DO
-	 * @param args
-	 * @throws IOException 
+	 * @param args Command line args
+	 * @throws IOException Exception handling
 	 */
 	
 	public static void main(String[] args) throws IOException {
 		//Scanner for input from keyboard
 		Scanner kybd = new Scanner(System.in);
+		
+		Game theGame = null;
 		
 		while(true) {
 			//Prints menu
@@ -24,12 +25,13 @@ public class Main {
 			if(!playGame)
 				break;
 			//Creates game 
-			Game theGame = createGame(kybd);
+			theGame = createGame(kybd);
 			//Create Roll object
 			Roll theDice = theGame.roll();	
 			//Decides who goes first
 			boolean p1Turn = whoGoesFirst(theGame, theDice);
 			System.out.println(theGame.getPlayerName(p1Turn) + " goes first.");
+			System.out.println();
 			//Run loop till game is over
 			while(!theGame.isGameOver()) {
 				//Prints out scores and board
@@ -40,57 +42,82 @@ public class Main {
 				int roll = theDice.roll();
 				System.out.println(theDice);
 				//Checks if player can move
-				if(!theGame.noPossibleMove(p1Turn, roll)) {
-					//Variable for is player can go again
-					boolean goAgain = false;
-					//loop and a half
-					while(true) {
-						//Checks if player can move from start
-						if(theGame.canPlayerMoveFromStart(p1Turn)) {
-								System.out.print("Would you like to move "
-										+ "a piece from start? Y/N:  ");
-								//Read in players selection
-								char yn = kybd.next().charAt(0);
-								//if yes
-								if(Character.toLowerCase(yn) == 'y')
+				//Variable for is player can go again
+				boolean goAgain = true;
+				//loop and a half
+				while(true) {
+					//Checks if player can move from start
+							System.out.print("Would you like to move "
+									+ "a piece from start? Y/N/F:  ");
+							//Read in players selection
+							char yn = kybd.next().charAt(0);
+							//if yes
+							if(Character.toLowerCase(yn) == 'y') {
+								if(theGame.canPlayerMoveFromStart(p1Turn)) {
 									try {
 										//Move the new piece
 										goAgain = theGame.newPiece(p1Turn, roll);
 										break;
 									} catch (Exception e) { 
 										System.err.println(e.getMessage());
-									}	
-/*implement no option*/}//Player didn't move piece from start
-						
-						System.out.print("Enter a Space to move your piece from: ");
-						//Read in piece
-						String space = kybd.next();
-						//Parse input to be readable
-						Pair pair = parse(space);
-						//Get column
-						char column = pair.getFirst();
-						//Get row
-						int row = pair.getSecond();
-						try{
-							//Move requested piece
-							goAgain = theGame.move(column, row, roll, p1Turn);
-							break;
-						} catch (Exception e) {
-						
-							System.err.println(e.getMessage());
-						}	
-					}//End of playable turn loop
-					//Checks if player can go again
-					if(!goAgain)
-						//Swaps turn
-						p1Turn = !p1Turn;
-				}else {
-					System.out.println("No Legal Moves, Sorry!");
+									}
+								}
+								else {
+									System.err.println("Error: No Pieces at start");
+								}
+							}//Player didn't move piece from start
+							else if(Character.toLowerCase(yn) == 'n'){
+								System.out.print("Enter a Space to move your piece from: ");
+								//Read in piece
+								String space = kybd.next();
+									try {
+										//Parse input to be readable
+										Pair pair = parse(space);	
+										//Get column
+										char column = pair.getFirst();
+										//Get row
+										int row = pair.getSecond();
+											try{
+												//Move requested piece
+												goAgain = theGame.move(column, row, roll, p1Turn);
+												break;
+											} catch (Exception e) {
+												System.err.println(e.getMessage());
+											}
+									}
+									catch (IOException e) {
+										System.err.println(e.getMessage());
+									}
+								}
+							else if(Character.toLowerCase(yn) == 'f') {
+								System.err.println("Turn Forfeited");
+								goAgain = false;
+								break;
+							}
+							else {
+								System.err.println("Not a valid selection");
+							}
+				}//End of playable turn loop
+				//Checks if player can go again
+				if(!goAgain)
 					//Swaps turn
 					p1Turn = !p1Turn;
-				}//End of non-playable turn loop
-			}//End of Game over loop
-			
+			}//End of Game over loop	
+			System.out.println();
+			System.out.println();
+			System.out.println();
+			System.out.println("*********************************************************");
+			System.out.println("* Congradulations " + theGame.theWinner() + ", you won! *");
+			System.out.println("*********************************************************");
+			System.out.println();
+			System.out.println();
+			System.out.println();
+			System.out.println("Would you like to play again? Y/N");
+			char yn = kybd.next().charAt(0);
+			if(Character.toLowerCase(yn) != 'y') {
+				System.out.println("Thanks for playing!");
+				System.exit(0);
+			}
 		}//End of while loop
 	}
 
@@ -130,6 +157,7 @@ public class Main {
 		case 'a':
 		case 'A':
 			System.out.println("Game is starting...");
+			System.out.println();
 			break;
 		case 'b':
 		case 'B':
@@ -144,7 +172,6 @@ public class Main {
 			play = false;
 			System.out.println("Exiting...");
 			break;
-		
 		}
 		
 		return play;
@@ -176,6 +203,7 @@ public class Main {
 	 * value based on result. 
 	 * 
 	 * @param game The game being played
+	 * @param theDice Dice object
 	 * @return boolean True player 1 goes first, false player 2 goes first
 	 */
 	private static boolean whoGoesFirst(Game game, Roll theDice) {
@@ -183,6 +211,10 @@ public class Main {
 			//Rolls the dice for each player
 			int roll1 = theDice.roll();
 			int roll2 = theDice.roll();
+			
+			System.out.println();
+			System.out.println(game.getPlayerName(true) + " rolled " + roll1);
+			System.out.println(game.getPlayerName(false) + " rolled " + roll2);
 			
 			if(roll1 > roll2)
 				//player 1 goes first
@@ -199,8 +231,11 @@ public class Main {
 	 * @param space Coordinates of a space to be converted   
 	 * @return Pair Coordinates separated into parts 
 	 */
-	private static Pair parse(String space){
+	private static Pair parse(String space) throws IOException{
+		if(space.length() != 2)
+			throw new IOException("Error: Input must be Column and then Row!");
 		char column = space.charAt(0);
+		column = Character.toUpperCase(column);
 		int row = Integer.parseInt(space.substring(1));
 		return new Pair(column, row);
 	}
@@ -220,6 +255,4 @@ public class Main {
 		String credits = "Made by Cassidy McAllister & Ari Mermelstien";
 		System.out.println(credits);
 	}
-	
-	
 }

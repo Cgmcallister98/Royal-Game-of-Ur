@@ -100,7 +100,7 @@ public class Player {
 	 */
 	public void reset(int index) {
 		pieces[index].reset();
-		System.out.println(Arrays.toString(pieces));
+		//System.out.println(Arrays.toString(pieces));
 	}
 
 	/**
